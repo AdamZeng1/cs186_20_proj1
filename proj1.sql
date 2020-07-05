@@ -164,7 +164,7 @@ buckets AS (
   generate_series(0, bucket_count - 1) AS t(bucket)
 )
   SELECT 
-  bucket,
+  bucket as binid,
   min_range,
   max_range,
   COUNT(num) as count_num
