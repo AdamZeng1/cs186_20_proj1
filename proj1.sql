@@ -177,17 +177,47 @@ buckets AS (
 -- Question 4iii
 CREATE VIEW q4iii(yearid, mindiff, maxdiff, avgdiff)
 AS
-  SELECT 1, 1, 1, 1 -- replace this line
+  WITH previous AS (
+  SELECT (yearid + 1) as newYearid, MIN(salary) as min, MAX(salary) as max, AVG(salary) as avg
+  FROM salaries 
+  GROUP BY newYearid
+),
+current AS (
+  SELECT yearid, MIN(salary) as min, MAX(salary) as max, AVG(salary) as avg
+  FROM salaries 
+  GROUP BY yearid
+)
+SELECT c.yearid, (c.min - p.min) as mindiff, (c.max - p.max) as maxdiff, (c.avg - p.avg) as avgdiff
+FROM previous p INNER JOIN current c
+ON p.newYearid = c.yearid
+ORDER BY c.yearid
 ;
 
 -- Question 4iv
 CREATE VIEW q4iv(playerid, namefirst, namelast, salary, yearid)
 AS
-  SELECT 1, 1, 1, 1, 1 -- replace this line
+SELECT s.playerid, namefirst, namelast, salary, yearid
+FROM salaries s INNER JOIN people p
+ON  s.playerid = p.playerid
+WHERE s.yearid = 2000 and s.salary = 
+(SELECT MAX(s2.salary) FROM salaries s2 WHERE s2.yearid = 2000)
+
+UNION
+
+SELECT s.playerid, namefirst, namelast, salary, yearid
+FROM salaries s INNER JOIN people p
+ON  s.playerid = p.playerid
+WHERE s.yearid = 2001 and s.salary = 
+(SELECT MAX(s2.salary) FROM salaries s2 WHERE s2.yearid = 2001)
 ;
 -- Question 4v
 CREATE VIEW q4v(team, diffAvg) AS
-  SELECT 1, 1 -- replace this line
+SELECT a.teamid, (max(salary) - min(salary)) as diffAvg
+FROM AllstarFull a INNER JOIN salaries s
+ON a.playerid = s.playerid
+AND a.yearid = s.yearid
+WHERE a.yearid = 2016
+GROUP BY a.teamid
+ORDER BY a.teamid
 ;
-
 
