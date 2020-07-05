@@ -92,25 +92,86 @@ AS
 -- Question 3ii
 CREATE VIEW q3ii(playerid, namefirst, namelast, lslg)
 AS
-  SELECT 1, 1, 1, 1 -- replace this line
+  SELECT p.playerid, namefirst, namelast, (SUM(b.H) + SUM(b.H2B) + 2 * SUM(b.H3B) + 3 * SUM(b.HR)) * 1.0 / SUM(b.AB) as lslg
+  FROM people p INNER JOIN batting b
+  ON p.playerid = b.playerid
+  GROUP BY p.playerid
+  HAVING SUM(b.AB) > 50
+  ORDER BY lslg DESC, playerid ASC
+  LIMIT 10 
 ;
 
 -- Question 3iii
 CREATE VIEW q3iii(namefirst, namelast, lslg)
 AS
-  SELECT 1, 1, 1 -- replace this line
+  SELECT namefirst, namelast, (SUM(b.H) + SUM(b.H2B) + 2 * SUM(b.H3B) + 3 * SUM(b.HR)) * 1.0 / SUM(b.AB) as lslg
+  FROM people p INNER JOIN batting b
+  ON p.playerid = b.playerid
+  GROUP BY p.playerid
+  HAVING SUM(b.AB) > 50
+  AND (SUM(b.H) + SUM(b.H2B) + 2 * SUM(b.H3B) + 3 * SUM(b.HR)) * 1.0 / SUM(b.AB) > 
+  (SELECT (SUM(b.H) + SUM(b.H2B) + 2 * SUM(b.H3B) + 3 * SUM(b.HR)) * 1.0 / SUM(b.AB) as lslg
+  FROM people p INNER JOIN batting b
+  ON p.playerid = b.playerid
+  WHERE p.playerid = 'mayswi01'
+  GROUP BY p.playerid)
+  ORDER BY namefirst ASC, lslg DESC
 ;
 
 -- Question 4i
 CREATE VIEW q4i(yearid, min, max, avg, stddev)
 AS
-  SELECT 1, 1, 1, 1, 1 -- replace this line
+  WITH MEAN AS (
+    SELECT yearid, AVG(salary) AS avg
+    FROM salaries
+    GROUP BY yearid 
+  ), DEVIATION AS (
+    SELECT salaries.yearid, salary, avg, POWER(salary - MEAN.avg, 2) AS Error
+    FROM salaries INNER JOIN MEAN
+    ON salaries.yearid = MEAN.yearid
+  ) SELECT yearid, MIN(salary) as min, MAX(salary) as max, AVG(DEVIATION.avg) as avg,
+  SQRT(SUM(Error) / (COUNT(*) - 1)) as stddev
+  FROM DEVIATION
+  GROUP BY yearid
+  ORDER BY yearid ASC
 ;
 
 -- Question 4ii
 CREATE VIEW q4ii(binid, low, high, count)
 AS
-  SELECT 1, 1, 1, 1 -- replace this line
+  WITH params AS (
+  -- Parameters for down stream queries
+  SELECT
+    10 AS bucket_count
+),
+numbers AS (
+  SELECT salary AS num
+  FROM params, salaries 
+  WHERE yearid = 2016
+),
+overall AS (
+  SELECT MIN(num) min_num,
+  MAX(num) max_num
+  FROM numbers
+), 
+buckets AS (
+    -- Build list of buckets range
+  SELECT bucket,
+  floor(min_num + ((max_num - min_num)::numeric / bucket_count) * bucket)::int AS min_range,
+  floor(min_num + ((max_num - min_num)::numeric / bucket_count) * (bucket + 1))::int AS max_range
+  FROM params,
+  overall,
+  generate_series(0, bucket_count - 1) AS t(bucket)
+)
+  SELECT 
+  bucket,
+  min_range,
+  max_range,
+  COUNT(num) as count_num
+  FROM numbers
+  JOIN buckets ON (numbers.num = max_range OR (numbers.num < max_range and numbers.num >= min_range))
+  GROUP BY bucket, min_range, max_range
+  ORDER BY bucket
 ;
 
 -- Question 4iii
@@ -128,4 +189,5 @@ AS
 CREATE VIEW q4v(team, diffAvg) AS
   SELECT 1, 1 -- replace this line
 ;
+
 
